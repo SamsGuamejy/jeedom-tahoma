@@ -303,6 +303,15 @@ class tahoma extends eqLogic
                             $tahomaCmd->setConfiguration('minValue', '0');
                             $tahomaCmd->setConfiguration('maxValue', '100');
                             $tahomaCmd->setDisplay('generic_type', 'FLAP_SLIDER');
+                        } else if ($command->commandName == "setClosureAndLinearSpeed") {
+                            $tahomaCmd->setType('action');
+                            $tahomaCmd->setIsVisible(0);
+                            $tahomaCmd->setSubType('slider');
+                            $tahomaCmd->setConfiguration('request', 'closure');
+                            $tahomaCmd->setConfiguration('parameters', '#slider#,lowspeed');
+                            $tahomaCmd->setConfiguration('minValue', '0');
+                            $tahomaCmd->setConfiguration('maxValue', '100');
+                            $tahomaCmd->setDisplay('generic_type', 'FLAP_SLIDER');
                         } else if ($command->commandName == "setOrientation") {
                             $tahomaCmd->setType('action');
                             $tahomaCmd->setIsVisible(0);
@@ -700,6 +709,27 @@ class tahomaCmd extends cmd
                                 $parameters = 100 - $parameters;
 
                                 $parameters = array_map('intval', explode(",", $parameters));
+                                tahomaSendCommand($userId, $userPassword, $deviceURL, $commandName, $parameters, $this->getName());
+
+                                $eqLogics = eqLogic::byType('tahoma');
+                                foreach ($eqLogics as $eqLogic) {
+                                    if ($eqLogic->getConfiguration('deviceURL') == $deviceURL) {
+                                        foreach ($eqLogic->getCmd() as $command) {
+                                            if ($command->getType() == 'info') {
+                                                if ($command->getName() == "core:ClosureState") {
+                                                    $command->setCollectDate('');
+                                                    $command->event($newEventValue);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                return;
+                            }
+                            if ($commandName == "setClosureAndLinearSpeed") {
+                                $parameters =  explode(",", $parameters);
+                                $parameters[0] = intval($parameters[0]);
                                 tahomaSendCommand($userId, $userPassword, $deviceURL, $commandName, $parameters, $this->getName());
 
                                 $eqLogics = eqLogic::byType('tahoma');
